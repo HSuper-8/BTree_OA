@@ -16,9 +16,9 @@ struct BTPAGE {
 	//std::vector<short> RRNchildren;
 };
 
-int position(vector<string> keys, string compare);
-void insere_na_pagina(PAGE page, string reg, PAGE son);
-bool insere_rec(string reg, PAGE page, string *reg_retorno, PAGE page_retorno, int MAX);
+int position(PAGE page, string compare);
+void insertInPage(PAGE page, string record, PAGE son);
+bool insertionProcess(string record, PAGE page, string &returnRecord, PAGE *returnPage, int MAX);
 PAGE newPage(int MAX);
-PAGE insere(string reg, PAGE pageRoot, int MAX);
-void imprime(PAGE p, int nivel);
+PAGE insert(string record, PAGE pageRoot, int MAX);
+void printBTree(PAGE page, int level);

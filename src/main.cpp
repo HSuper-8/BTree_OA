@@ -12,15 +12,15 @@ int main(int argc, char *argv[]){
 	string ord = string(ordem);
 	int MAX = stoi(ord) - 1;
 	
-	string reg;
+	string key;
 	PAGE pageRoot = NULL;
 	cout << "insira chave: ";
-	getline(cin, reg);
+	getline(cin, key);
 	while(true){
-    	pageRoot = insere(reg, pageRoot, MAX);
-    	imprime(pageRoot, 0);
+    	pageRoot = insert(key, pageRoot, MAX);
+    	printBTree(pageRoot, 0);
     	cout << "insira chave: ";
-		getline(cin, reg);
+		getline(cin, key);
 	}
 	return 0;
 }

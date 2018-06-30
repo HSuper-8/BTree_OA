@@ -2,49 +2,49 @@
 
 using namespace std;
 
-int position(vector<string> keys, string compare){
+int position(PAGE page, string compare){
 	int i = 0;
-	while(i < keys.size()){
-		if(compare.compare(keys[i]) < 0) break;
+	while(i < page->keyCount){
+		if(compare.compare(page->keys[i]) < 0) break;
 		i++;
 	}
 	return i;
 }
 
-void insere_na_pagina(PAGE page, string reg, PAGE son){ 
+void insertInPage(PAGE page, string record, PAGE son){ 
 	int k;
-	for (k = page->keyCount; (k > 0) && (reg.compare(page->keys[k-1]) < 0); k--){
+	for (k = page->keyCount; (k > 0) && (record.compare(page->keys[k-1]) < 0); k--){
     	page->keys[k].assign(page->keys[k-1]);
     	page->children[k+1] = page->children[k];    
   	}
-	page->keys[k].assign(reg);
+	page->keys[k].assign(record);
 	page->children[k+1] = son;
 	page->keyCount++;
 } 
 
-bool insere_rec(string reg, PAGE page, string& reg_retorno, PAGE *page_retorno, int MAX){ 
+bool insertionProcess(string record, PAGE page, string& returnRecord, PAGE *returnPage, int MAX){ 
 	bool grownUp;
 	long j, i = 0;
 	PAGE pageTemp;
 
 	if (page == NULL){ 
-  		reg_retorno.assign(reg);
-  		(*page_retorno) = NULL;
+  		returnRecord.assign(record);
+  		(*returnPage) = NULL;
     	return true;
   	}
 
-  	i = position(page->keys, reg);
+  	i = position(page, record);
 
-	if (binary_search (page->keys.begin(), page->keys.end(), reg)){
+	if (binary_search(page->keys.begin(), page->keys.end(), record)){
 		printf(" Erro: REGISTRO ja esta presente\n");
     	return false;
   	}
 
-	grownUp = insere_rec(reg, page->children[i], reg_retorno, page_retorno, MAX);
+	grownUp = insertionProcess(record, page->children[i], returnRecord, returnPage, MAX);
 	if(!grownUp) return false;
 
- 	if (page->keyCount < MAX){   /* PAGINA tem espaco */
-		insere_na_pagina(page, reg_retorno, (*page_retorno));
+ 	if (page->keyCount < MAX){   //PAGINA tem espaco
+		insertInPage(page, returnRecord, (*returnPage));
 		return false;
 	}
   
@@ -53,26 +53,28 @@ bool insere_rec(string reg, PAGE page, string& reg_retorno, PAGE *page_retorno, 
 	int MIN = MAX/2;
 
 	if (i < MIN + 1){
-		insere_na_pagina(new_Page, page->keys[MAX-1], page->children[MAX]);
+		insertInPage(new_Page, page->keys[MAX-1], page->children[MAX]);
 		page->keys[MAX-1].assign("");
+		page->children[MAX] = NULL;
 		page->keyCount --;
-		insere_na_pagina(page, reg_retorno, (*page_retorno));
+		insertInPage(page, returnRecord, (*returnPage));
 	}
 	else
-		insere_na_pagina(new_Page, reg_retorno, (*page_retorno));
+		insertInPage(new_Page, returnRecord, (*returnPage));
 
 	for(j = MIN + 2; j <= MAX; j++){
-		insere_na_pagina(new_Page, page->keys[j-1], page->children[j]);
+		insertInPage(new_Page, page->keys[j-1], page->children[j]);
 		page->keys[j-1].assign("");
 		page->children[j] = NULL;
 		page->keyCount --;
 	}
 
-	new_Page->children.insert(new_Page->children.begin(), page->children[MIN + 1]);
-	reg_retorno.assign(page->keys[MIN]);
-	(*page_retorno) = new_Page;
+	new_Page->children[0] = page->children[MIN + 1];
+	returnRecord.assign(page->keys[MIN]);
+	(*returnPage) = new_Page;
 	page->keys[MIN].assign("");
-	page->keyCount --;
+	page->children[MIN+1] = NULL;
+	page->keyCount = MIN;
 
   	return true;
 }
@@ -87,29 +89,29 @@ PAGE newPage(int MAX){
 }
 
 // Retorna ponteiro para a pagina raiz
-PAGE insere(string reg, PAGE pageRoot, int MAX){ 
+PAGE insert(string record, PAGE pageRoot, int MAX){ 
 	bool grownUp;
-	string reg_retorno = "";
-	PAGE page_retorno;
-	grownUp = insere_rec(reg, pageRoot, reg_retorno, &page_retorno, MAX);
+	string returnRecord = "";
+	PAGE returnPage;
+	grownUp = insertionProcess(record, pageRoot, returnRecord, &returnPage, MAX);
 	
 	if (grownUp){  /* Arvore cresce na altura pela raiz */ 
     	PAGE newRoot = newPage(MAX);
     	newRoot->keyCount ++;
-    	newRoot->keys[0].assign(reg_retorno);
+    	newRoot->keys[0].assign(returnRecord);
     	newRoot->children[0] = pageRoot;
-    	newRoot->children[1] = page_retorno;
+    	newRoot->children[1] = returnPage;
     	return newRoot;
 	}
 	return pageRoot;
 }
 
-void imprime(PAGE p, int nivel){ 
-	if (p == NULL) return;
-	cout << "Nivel: " << nivel << endl;
-	for (short i = 0; i < p->keyCount; i++)
-		cout << p->keys[i] << "|";
+void printBTree(PAGE page, int level){ 
+	if (page == NULL) return;
+	cout << "Nível: " << level << endl;
+	for (short i = 0; i < page->keys.size(); i++)
+		cout << page->keys[i] << "|";
 	cout << "\n" << endl;	
-  	for (short i = 0; i <= p->keyCount; i++)
-    	imprime(p->children[i], nivel+1);
+  	for (short i = 0; i <= page->keys.size(); i++)
+    	printBTree(page->children[i], level+1);
 } 
