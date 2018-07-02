@@ -25,26 +25,31 @@ string createRRN(long int rrn){
   return RRN;
 }
 
-PAGE getPage(long int rrn, int MAX, fstream& Idx){
+PAGE getPage(long int rrn, int MAX){
+  fstream Idx;
+  Idx.open("../res/indicelista.bt");
   PAGE page = newPage(MAX);
-  Idx.seekg(rrn);
-  string records, RRNs;
-  int k = 0, i = 0;
-  getline(Idx, records);
-  while(k < records.size()){
-    page->keys[i++].assign( records.substr(k, 16) );
-    page->keyCount ++;
-    k += 17;
-  }
-  getline(Idx, RRNs);
-  k = 0;
-  i = 0;
-  while(k < RRNs.size()){
-    page->childrenRRNs[i++] = stoi( RRNs.substr(k, 7) );
-    k += 8;
-  }
-  page->RRN = rrn;
-  return page;
+    Idx.seekg(rrn);
+    string records, RRNs;
+    int k = 0, i = 0;
+    getline(Idx, records);
+    while(k < records.size()){
+      string str = "                ";
+      if(str.compare(records.substr(k, 16)) == 0) break;
+      page->keys[i++].assign( records.substr(k, 16) );
+      page->keyCount ++;
+      k += 17;
+    }
+    getline(Idx, RRNs);
+    k = 0;
+    i = 0;
+    while(k < RRNs.size()){
+      page->childrenRRNs[i++] = stoi( RRNs.substr(k, 7) );
+      k += 8;
+    }
+    page->RRN = rrn;
+    Idx.close();
+    return page;
 }
 
 void writePage(PAGE page, bool newPage, int MAX){
@@ -88,7 +93,7 @@ PAGE newPage(int MAX){
 
 PAGE newPage(int MAX);
 void writePage(PAGE page, bool newPage, int MAX);
-PAGE newPage(int MAX);
+PAGE getPage(long int rrn, int MAX);
 string createRRN(long int rrn);
 string CreateKey(string line);
 
@@ -97,24 +102,6 @@ int main () {
   //fstream Idx("../res/indicelista.bt");
   page = newPage(3);
 
-  string rrnRecordStr = createRRN(0);
-  string line = "Carlos Dias Takase                       62364  EM  A";
-  string record = CreateKey(line);
-  string btreeLine = record + "|" + rrnRecordStr;
-
-  page->keys[0].assign(btreeLine);
-  //page->keys[1].assign"CAR62364|0      ";
-  page->keyCount = 1;
-  page->RRN = 20;
-  writePage(page, true, 3);
-  //Idx.seekp(page->RRN);
-  //for(int k = 0; k < 3; k++){
-//    cout << page->keys[k] << endl;
-    //Idx << page->keys[k] << " ";
-  //}
-
-  page->keys[1].assign(page->keys[0]);
-  writePage(page, false, 3);
-  //Idx.close();
+  page = getPage(20 + 85, 3);
   return 0;
 }

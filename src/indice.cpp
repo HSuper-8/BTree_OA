@@ -40,7 +40,7 @@ PAGE getPage(long int rrn, int MAX){
 }
 
 // Insere novo registro na pagina de forma ordenada
-void insertInPage(PAGE page, string record, long int son, int MAX){ 
+void insertInPage(PAGE page, string record, long int son, bool _write, int MAX){ 
 	int k;
 	for (k = page->keyCount; (k > 0) && (record.compare(page->keys[k-1]) < 0); k--){
     	page->keys[k].assign(page->keys[k-1]);
@@ -49,7 +49,7 @@ void insertInPage(PAGE page, string record, long int son, int MAX){
 	page->keys[k].assign(record);
 	page->childrenRRNs[k+1] = son;
 	page->keyCount++;
-	writePage(page, false, MAX);
+	if(_write) writePage(page, false, MAX);
 }
 
 // Escreve pagina no arquivo. Se for nova, escreve no fim do arquivo,
@@ -106,7 +106,7 @@ bool insertionProcess(string record, long int currentRRN, string& returnRecord, 
 	if(!grownUp) return false;
 
  	if (page->keyCount < MAX){   //PAGINA tem espaco
-		insertInPage(page, returnRecord, (*returnRRN), MAX);
+		insertInPage(page, returnRecord, (*returnRRN), true, MAX);
 		return false;
 	}
   
@@ -114,18 +114,18 @@ bool insertionProcess(string record, long int currentRRN, string& returnRecord, 
 	PAGE new_Page = newPage(MAX);
 	int MIN = MAX/2;
 
-	if (i < MIN + 1){ // novo registro vai para nova página
-		insertInPage(new_Page, page->keys[MAX-1], page->childrenRRNs[MAX], MAX);
+	if (i < MIN + 1){ // novo registro é inserido na pagina corrente
+		insertInPage(new_Page, page->keys[MAX-1], page->childrenRRNs[MAX], false, MAX);
 		page->keys[MAX-1].assign("                ");
 		page->childrenRRNs[MAX] = -1;
 		page->keyCount --;
-		insertInPage(page, returnRecord, (*returnRRN), MAX);
+		insertInPage(page, returnRecord, (*returnRRN), false, MAX);
 	}
-	else // registro é inserido na pagina corrente
-		insertInPage(new_Page, returnRecord, (*returnRRN), MAX);
+	else // novo registro é inserido na nova pagina
+		insertInPage(new_Page, returnRecord, (*returnRRN), false, MAX);
 
 	for(j = MIN + 2; j <= MAX; j++){
-		insertInPage(new_Page, page->keys[j-1], page->childrenRRNs[j], MAX);
+		insertInPage(new_Page, page->keys[j-1], page->childrenRRNs[j], false, MAX);
 		page->keys[j-1].assign("                ");
 		page->childrenRRNs[j] = -1;
 		page->keyCount --;
@@ -133,12 +133,12 @@ bool insertionProcess(string record, long int currentRRN, string& returnRecord, 
 
 	new_Page->childrenRRNs[0] = page->childrenRRNs[MIN + 1];
 	returnRecord.assign(page->keys[MIN]);
-	(*returnRRN) = new_Page->RRN;
 	page->keys[MIN].assign("                ");
 	page->childrenRRNs[MIN+1] = -1;
 	page->keyCount = MIN;
-	writePage(page, false, MAX); 
+	writePage(page, false, MAX);
 	writePage(new_Page, true, MAX);
+	(*returnRRN) = new_Page->RRN;
 
   	return true;
 }
@@ -166,6 +166,11 @@ long int insert(string record, long int rootRRN, int MAX){
     	newRoot->childrenRRNs[0] = rootRRN;
     	newRoot->childrenRRNs[1] = returnRRN;
     	writePage(newRoot, true, MAX);
+
+    	fstream Idx;
+    	Idx.open("../res/indicelista.bt");
+    	Idx << to_string(newRoot->RRN);
+    	Idx.close();
     	return newRoot->RRN;
 	}
 	return rootRRN;
@@ -201,21 +206,16 @@ long int createBTree(int MAX){
 	long int rootRRN = -1, oldRRN;
 	string line = "to begin", record, rrnRecordStr;
 
+	getline(List, line);
 	while(line.size() != 0){ // Enquanto não for ultima linha do arquivo
 		long int rrnRecord = List.tellg();
 		rrnRecordStr = createRRN(rrnRecord);
-		getline(List, line);
 		record = CreateKey(line);
 
 		string btreeLine = record + "|" + rrnRecordStr; // registros a serem inseridos
 		oldRRN = rootRRN;
 		rootRRN = insert(btreeLine, rootRRN, MAX);
-
-		//if(oldRRN != rootRRN){
-			//Idx.seekp(0);
-			//cout << to_string(rootRRN) << endl;
-			//Idx << to_string(rootRRN);
-		//}
+		getline(List, line);
 	}
 
 	List.close();
