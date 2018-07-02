@@ -1,4 +1,5 @@
 #include "indice.h"
+#include "btoperations.h"
 
 using namespace std;
 
@@ -10,13 +11,11 @@ int main(int argc, char *argv[]){
 
 	char *ordem = argv[1];
 	int MAX = stoi(string(ordem)) - 1;
-	
+
 	ofstream Idx("../res/indicelista.bt");
-	Idx << "20                 " << endl;
+	Idx << "20                 " << endl; //Prepara arquivo para inserir arvore b
 	Idx.close();
 
 	createBTree(MAX);
 	return 0;
 }
-
-// C G J X N S U O A E B H I F K L Q R T V W Z
