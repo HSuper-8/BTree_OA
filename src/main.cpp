@@ -1,5 +1,4 @@
 #include "indice.h"
-#include "btoperations.h"
 
 using namespace std;
 
@@ -17,5 +16,8 @@ int main(int argc, char *argv[]){
 	Idx.close();
 
 	createBTree(MAX);
+
+	choice_key(MAX);
+
 	return 0;
 }

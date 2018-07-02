@@ -31,3 +31,8 @@ bool insertionProcess(string record, long int currentRRN, string& returnRecord, 
 long int insert(string record, long int rootRRN, int MAX);
 void printBTree(PAGE p, int level);
 long int createBTree(int MAX);
+
+// Search record
+bool search(long int RRN, string KEY, int *FOUND_RRN, int *FOUND_POS, int MAX, int *seeks);
+bool find(PAGE page, string key, int *i);
+void choice_key(int MAX);

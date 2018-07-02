@@ -196,28 +196,91 @@ string CreateKey(string line){
 	record.push_back(toupper(line[0]));
 	record.push_back(toupper(line[1]));
 	record.push_back(toupper(line[2]));
-	return record + line.substr(41, 5);
+	if(line[41] != ' ') return record + line.substr(41, 5);
+	if(line[41] == ' ') return record + line.substr(42, 5);
 }
 
 long int createBTree(int MAX){
 	ifstream List("../res/lista.txt"); // Arquivo original com os dados dos Alunos
 	// Arquivo de Indices Primarios (Arvore B):
 	//fstream Idx("../res/indicelista.bt", std::fstream::in | std::fstream::out);
-	long int rootRRN = -1, oldRRN;
-	string line = "to begin", record, rrnRecordStr;
+	long int rootRRN = -1;
+	string line, record, rrnRecordStr;
 
+	long int rrnRecord = List.tellg();
 	getline(List, line);
 	while(line.size() != 0){ // Enquanto não for ultima linha do arquivo
-		long int rrnRecord = List.tellg();
 		rrnRecordStr = createRRN(rrnRecord);
 		record = CreateKey(line);
-
 		string btreeLine = record + "|" + rrnRecordStr; // registros a serem inseridos
-		oldRRN = rootRRN;
+
 		rootRRN = insert(btreeLine, rootRRN, MAX);
+
+		rrnRecord = List.tellg();
+		line.clear();
 		getline(List, line);
 	}
 
 	List.close();
 	return rootRRN;
+}
+
+bool find(PAGE page, string key, int *i){
+	while((*i) < page->keyCount){
+		if(key.compare( (page->keys[*i]).substr(0, 8) ) == 0) return true;
+		(*i)++;
+	}
+	return false;
+}
+
+bool search(long int RRN, string KEY, int *FOUND_RRN, int *FOUND_POS, int MAX, int *seeks){
+	int i = 0;
+	bool found;
+   	if(RRN == -1) return false; // parar condição de recursão (fim da arvore)
+   	else{
+     	PAGE page = getPage(RRN, MAX);
+     	(*seeks) ++;
+      	found = find(page, KEY, &i);
+      	if(found){
+			(*FOUND_RRN) = RRN; // o RRN corrente contém a chave buscada
+         	(*FOUND_POS) = i;      		
+         	return found;
+      	}
+      	else // siga a referência da pagina filho para o próximo nível abaixo
+        	return ( search(page->childrenRRNs[i], KEY, &(*FOUND_RRN), &(*FOUND_POS), MAX, &(*seeks)) );
+    }
+}
+
+void choice_key(int MAX){
+	cout << "\nDigite a chave cujo registro que deseja buscar: " << endl;
+   	int FOUND_RRN = 0, FOUND_POS = 0, seeks = 0, rrnOriginFile;
+   	string key, record, line;
+   	long int rrnROOT;
+   	bool found;
+   	getline(cin, key);
+
+   	fstream Idx("../res/indicelista.bt");
+   	getline(Idx, line);
+   	rrnROOT = stoi(line); // encontra RRN da raiz da arvore B
+   	Idx.close();
+
+   	found = search(rrnROOT, key, &FOUND_RRN, &FOUND_POS, MAX, &seeks);
+
+   	if(found){
+   		cout << "Chave encontrada!" << endl;
+   		cout << "\n Chave se encontra na pagina de RRN " << FOUND_RRN << " do arquivo de Indices" << endl;
+   		cout << "na posição " << FOUND_POS << "." << endl;
+   		cout << "\nQUANTIDADE DE SEEKS NECESSÁRIOS: " << seeks << endl;
+   		cout << "\n\n";
+   	}
+
+   	PAGE page = getPage(FOUND_RRN, MAX);
+   	record.assign(page->keys[FOUND_POS]);
+   	rrnOriginFile = stoi( record.substr(9, 7) );
+   	fstream List("../res/lista.txt");
+   	List.seekg(rrnOriginFile);
+   	getline(List, line);
+
+   	cout << "Registro encontrado:" << endl;
+   	cout << line << endl;
 }
