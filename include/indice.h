@@ -15,18 +15,17 @@ struct BTPAGE {
 	short keyCount;
 	vector<string> keys;
 	vector<long int> childrenRRNs;
-	//std::vector<short> RRNchildren;
 };
 
 int position(PAGE page, string compare);
-void insertInPage(PAGE page, string record, long int son, fstream& Idx, int MAX);
-PAGE getPage(long int rrn, fstream& Idx, int MAX);
+void insertInPage(PAGE page, string record, long int son, int MAX);
+PAGE getPage(long int rrn, int MAX);
 string createRRN(long int rrn);
 PAGE newPage(int MAX);
 
-bool insertionProcess(string record, long int currentRRN, string& returnRecord, long int *returnRRN, fstream& Idx, int MAX);
-void writePage(PAGE page, fstream& Idx, bool newPage, int MAX);
+bool insertionProcess(string record, long int currentRRN, string& returnRecord, long int *returnRRN, int MAX);
+void writePage(PAGE page, bool newPage, int MAX);
 
-long int insert(string record, long int rootRRN, fstream& Idx, int MAX);
+long int insert(string record, long int rootRRN, int MAX);
 void printBTree(PAGE p, int level);
 long int createBTree(int MAX);

@@ -11,7 +11,7 @@ int position(PAGE page, string compare){
 	return i;
 }
 
-void insertInPage(PAGE page, string record, long int son, fstream& Idx, int MAX){ 
+void insertInPage(PAGE page, string record, long int son, int MAX){ 
 	int k;
 	for (k = page->keyCount; (k > 0) && (record.compare(page->keys[k-1]) < 0); k--){
     	page->keys[k].assign(page->keys[k-1]);
@@ -20,21 +20,24 @@ void insertInPage(PAGE page, string record, long int son, fstream& Idx, int MAX)
 	page->keys[k].assign(record);
 	page->childrenRRNs[k+1] = son;
 	page->keyCount++;
-	writePage(page, Idx, false, MAX);
+	writePage(page, false, MAX);
 }
 
-PAGE getPage(long int rrn, fstream& Idx, int MAX){
+PAGE getPage(long int rrn, int MAX){
+	ifstream Index("../res/indicelista.bt");
 	PAGE page = newPage(MAX);
-	Idx.seekp(rrn);
+	Index.seekg(rrn);
 	string records, RRNs;
 	int k = 0, i = 0;
-	getline(Idx, records);
+	getline(Index, records);
 	while(k < records.size()){
+		string str = "                ";
+		if( str.compare(records.substr(k, 16)) == 0) break;
 		page->keys[i++].assign( records.substr(k, 16) );
     	page->keyCount ++;
     	k += 17;
   	}
-  	getline(Idx, RRNs);
+  	getline(Index, RRNs);
   	k = 0;
   	i = 0;
   	while(k < RRNs.size()){
@@ -42,10 +45,11 @@ PAGE getPage(long int rrn, fstream& Idx, int MAX){
     	k += 8;
   	}
   	page->RRN = rrn;
+  	Index.close();
   	return page;
 }
 
-bool insertionProcess(string record, long int currentRRN, string& returnRecord, long int *returnRRN, fstream& Idx, int MAX){ 
+bool insertionProcess(string record, long int currentRRN, string& returnRecord, long int *returnRRN, int MAX){ 
 	bool grownUp;
 	long j, i = 0;
 
@@ -55,7 +59,7 @@ bool insertionProcess(string record, long int currentRRN, string& returnRecord, 
     	return true;
   	}
 
-  	PAGE page = getPage(currentRRN, Idx, MAX);
+  	PAGE page = getPage(currentRRN, MAX);
   	i = position(page, record);
 
 	if (binary_search(page->keys.begin(), page->keys.end(), record)){
@@ -63,11 +67,11 @@ bool insertionProcess(string record, long int currentRRN, string& returnRecord, 
     	return false;
   	}
 
-  	grownUp = insertionProcess(record, page->childrenRRNs[i], returnRecord, &(*returnRRN), Idx, MAX);
+  	grownUp = insertionProcess(record, page->childrenRRNs[i], returnRecord, &(*returnRRN), MAX);
 	if(!grownUp) return false;
 
  	if (page->keyCount < MAX){   //PAGINA tem espaco
-		insertInPage(page, returnRecord, (*returnRRN), Idx, MAX);
+		insertInPage(page, returnRecord, (*returnRRN), MAX);
 		return false;
 	}
   
@@ -76,17 +80,17 @@ bool insertionProcess(string record, long int currentRRN, string& returnRecord, 
 	int MIN = MAX/2;
 
 	if (i < MIN + 1){
-		insertInPage(new_Page, page->keys[MAX-1], page->childrenRRNs[MAX], Idx, MAX);
+		insertInPage(new_Page, page->keys[MAX-1], page->childrenRRNs[MAX], MAX);
 		page->keys[MAX-1].assign("");
 		page->childrenRRNs[MAX] = -1;
 		page->keyCount --;
-		insertInPage(page, returnRecord, (*returnRRN), Idx, MAX);
+		insertInPage(page, returnRecord, (*returnRRN), MAX);
 	}
 	else
-		insertInPage(new_Page, returnRecord, (*returnRRN), Idx, MAX);
+		insertInPage(new_Page, returnRecord, (*returnRRN), MAX);
 
 	for(j = MIN + 2; j <= MAX; j++){
-		insertInPage(new_Page, page->keys[j-1], page->childrenRRNs[j], Idx, MAX);
+		insertInPage(new_Page, page->keys[j-1], page->childrenRRNs[j], MAX);
 		page->keys[j-1].assign("");
 		page->childrenRRNs[j] = -1;
 		page->keyCount --;
@@ -98,61 +102,71 @@ bool insertionProcess(string record, long int currentRRN, string& returnRecord, 
 	page->keys[MIN].assign("");
 	page->childrenRRNs[MIN+1] = -1;
 	page->keyCount = MIN;
-	writePage(page, Idx, false, MAX);
-	writePage(new_Page, Idx, true, MAX);
+	writePage(page, false, MAX);
+	writePage(new_Page, true, MAX);
 
   	return true;
 }
 
-void writePage(PAGE page, fstream& Idx, bool newPage, int MAX){
+void writePage(PAGE page, bool newPage, int MAX){
 	int k;
-	if(!newPage) Idx.seekg(page->RRN);
-	else{
-		string line;
-		while(!Idx.eof()) getline(Idx, line);
-		page->RRN = Idx.tellp();
+	ofstream File;
+	if(!newPage){
+		File.open("../res/indicelista.bt");
+		File.seekp(page->RRN);
 	}
+	else
+		File.open("../res/indicelista.bt", ofstream::out | std::ofstream::app);
 
-	for(k = 0; k < page->keyCount; k++)
-		Idx << page->keys[k] << " ";
-	if(k+1 < MAX){
-		while(k+1 <= MAX) Idx << "         ";
-	}
-	Idx << "\n";
+	for(k = 0; k < MAX; k++)
+		File << page->keys[k] << " ";
+
+	int pos = File.tellp();
+	page->RRN = pos - (MAX * 17);
+	File << "\n";
 
 	for(k = 0; k < page->keyCount + 1; k++)
-		Idx << createRRN(page->childrenRRNs[k]) << " ";
-	if(k+1 < MAX+1){
-		while(k+1 <= MAX+1) Idx << "        ";
+		File << createRRN(page->childrenRRNs[k]) << " ";
+	if(k <= MAX+1){
+		while(k+1 <= MAX+1){
+			File << "-1     " << " ";
+			k++;
+		}
 	}
-	Idx << "\n";
+	File << "\n";
+	
+	File.close();
 }
 
 PAGE newPage(int MAX){
 	PAGE page;
 	page = new struct BTPAGE;
 	page->keyCount = 0;
-	for(int i = 0; i < MAX; i++) page->keys.push_back("");
+	for(int i = 0; i < MAX; i++) page->keys.push_back("                ");
 	for(int i = 0; i <= MAX; i++) page->childrenRRNs.push_back(-1);
 	return page;
 }
 
 // Retorna ponteiro para a pagina raiz
-long int insert(string record, long int rootRRN, fstream& Idx, int MAX){ 
+long int insert(string record, long int rootRRN, int MAX){ 
 	bool grownUp;
-	string returnRecord = "";
-	long int *returnRRN;
-	grownUp = insertionProcess(record, rootRRN, returnRecord, returnRRN, Idx, MAX);
+	string returnRecord = "                ";
+	long int returnRRN;
+	grownUp = insertionProcess(record, rootRRN, returnRecord, &returnRRN, MAX);
 	
 	if (grownUp){  /* Arvore cresce na altura pela raiz */ 
     	PAGE newRoot = newPage(MAX);
     	newRoot->keyCount ++;
     	newRoot->keys[0].assign(returnRecord);
     	newRoot->childrenRRNs[0] = rootRRN;
-    	newRoot->childrenRRNs[1] = (*returnRRN);
-    	writePage(newRoot, Idx, true, MAX);
-    	Idx.seekg(0);
+    	newRoot->childrenRRNs[1] = returnRRN;
+    	writePage(newRoot, true, MAX);
+    	
+    	ofstream Idx("../res/indicelista.bt");
+    	Idx.seekp(0);
     	Idx << createRRN(newRoot->RRN);
+    	Idx.close();
+
     	return newRoot->RRN;
 	}
 	return rootRRN;
@@ -187,19 +201,21 @@ string CreateKey(string line){
 
 long int createBTree(int MAX){
 	ifstream List("../res/lista.txt");
-	fstream Idx("../res/indicelista.bt");
+	ofstream Idxx("../res/indicelista.bt");
+	Idxx << "8      " << endl;
+	Idxx.close();
 	long int rootRRN = -1;
-	string line, record, rrnRecordStr;
-	while(!List.eof()){
+	string line = "to begin", record, rrnRecordStr;
+
+	while(line.size() != 0){
 		long int rrnRecord = List.tellg();
 		rrnRecordStr = createRRN(rrnRecord);
 		getline(List, line);
 		record = CreateKey(line);
 
 		string btreeLine = record + "|" + rrnRecordStr;
-		rootRRN = insert(btreeLine, rootRRN, Idx, MAX);
+		rootRRN = insert(btreeLine, rootRRN, MAX);
 	}
 
 	List.close();
-	Idx.close();
 }
