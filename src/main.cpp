@@ -1,5 +1,5 @@
 #include "indice.h"
-//#include "heapsort.h"
+
 using namespace std;
 
 int main(int argc, char *argv[]){ 
@@ -9,20 +9,10 @@ int main(int argc, char *argv[]){
 	}
 
 	char *ordem = argv[1];
-	string ord = string(ordem);
-	int MAX = stoi(ord) - 1;
+	int MAX = stoi(string(ordem)) - 1;
 	
-	string key;
-	PAGE pageRoot = NULL;
-	cout << "insira chave: ";
-	getline(cin, key);
-	while(true){
-    	pageRoot = insert(key, pageRoot, MAX);
-    	printBTree(pageRoot, 0);
-    	cout << "insira chave: ";
-		getline(cin, key);
-	}
+	createBTree(MAX);
 	return 0;
 }
 
-// C G J X N S U O A E B H I F K L Q R T V U W Z
+// C G J X N S U O A E B H I F K L Q R T V W Z
