@@ -12,7 +12,9 @@ int position(PAGE page, string compare){ // posiçao em que novo registro devera
 }
 
 // Constroi Pagina a partir leitura do arquivo
-PAGE getPage(long int rrn, int MAX, fstream& Idx){
+PAGE getPage(long int rrn, int MAX){
+	fstream Idx;
+	Idx.open("../res/indicelista.bt");
 	PAGE page = newPage(MAX);
   	Idx.seekg(rrn);
   	string records, RRNs;
@@ -33,11 +35,12 @@ PAGE getPage(long int rrn, int MAX, fstream& Idx){
     	k += 8;
   	}
   	page->RRN = rrn;
+  	Idx.close();
   	return page;
 }
 
 // Insere novo registro na pagina de forma ordenada
-void insertInPage(PAGE page, string record, long int son, int MAX, fstream& Idx){ 
+void insertInPage(PAGE page, string record, long int son, int MAX){ 
 	int k;
 	for (k = page->keyCount; (k > 0) && (record.compare(page->keys[k-1]) < 0); k--){
     	page->keys[k].assign(page->keys[k-1]);
@@ -46,43 +49,42 @@ void insertInPage(PAGE page, string record, long int son, int MAX, fstream& Idx)
 	page->keys[k].assign(record);
 	page->childrenRRNs[k+1] = son;
 	page->keyCount++;
-	writePage(page, false, MAX, Idx);
+	writePage(page, false, MAX);
 }
 
 // Escreve pagina no arquivo. Se for nova, escreve no fim do arquivo,
 // senão, sobrescreve na posicao correspondente
-void writePage(PAGE page, bool newPage, int MAX, fstream& Idx){
-	int k;
-    if(!newPage) Idx.seekp(page->RRN);
+void writePage(PAGE page, bool newPage, int MAX){
+  int k;
+  fstream Idx;
+    if(!newPage){
+      Idx.open("../res/indicelista.bt");
+      Idx.seekp(page->RRN);
+    }
     else{
-      Idx.close();
       Idx.open("../res/indicelista.bt", std::ios::app);
     }
-    int pos = Idx.tellp();
+
     for(k = 0; k < MAX; k++)
       Idx << page->keys[k] << " ";
 
-  	pos = Idx.tellp();
+  int pos = Idx.tellp();
     page->RRN = pos - (MAX * 17);
     Idx << "\n";
 
-  	for(k = 0; k < page->keyCount + 1; k++)
-    	Idx << createRRN(page->childrenRRNs[k]) << " ";
+  for(k = 0; k < page->keyCount + 1; k++)
+      Idx << createRRN(page->childrenRRNs[k]) << " ";
     if(k < MAX+1){
-    	while(k+1 <= MAX+1){
-        	Idx << createRRN(-1) << " ";
-        	k++;
-      	}
+      while(k+1 <= MAX+1){
+        Idx << createRRN(-1) << " ";
+        k++;
+      }
     }
-  	Idx << "\n";
-  
-    if(newPage){
-      Idx.close();
-      Idx.open("../res/indicelista.bt");
-    }
+  Idx << "\n";
+  Idx.close();
 }
 
-bool insertionProcess(string record, long int currentRRN, string& returnRecord, long int *returnRRN, int MAX, fstream& Idx){ 
+bool insertionProcess(string record, long int currentRRN, string& returnRecord, long int *returnRRN, int MAX){ 
 	bool grownUp;
 	long j, i = 0;
 
@@ -92,7 +94,7 @@ bool insertionProcess(string record, long int currentRRN, string& returnRecord, 
     	return true;
   	}
 
-  	PAGE page = getPage(currentRRN, MAX, Idx);
+  	PAGE page = getPage(currentRRN, MAX);
   	i = position(page, record);
 
 	if (binary_search(page->keys.begin(), page->keys.end(), record)){
@@ -100,11 +102,11 @@ bool insertionProcess(string record, long int currentRRN, string& returnRecord, 
     	return false;
   	}
 
-  	grownUp = insertionProcess(record, page->childrenRRNs[i], returnRecord, &(*returnRRN), MAX, Idx);
+  	grownUp = insertionProcess(record, page->childrenRRNs[i], returnRecord, &(*returnRRN), MAX);
 	if(!grownUp) return false;
 
  	if (page->keyCount < MAX){   //PAGINA tem espaco
-		insertInPage(page, returnRecord, (*returnRRN), MAX, Idx);
+		insertInPage(page, returnRecord, (*returnRRN), MAX);
 		return false;
 	}
   
@@ -113,17 +115,17 @@ bool insertionProcess(string record, long int currentRRN, string& returnRecord, 
 	int MIN = MAX/2;
 
 	if (i < MIN + 1){ // novo registro vai para nova página
-		insertInPage(new_Page, page->keys[MAX-1], page->childrenRRNs[MAX], MAX, Idx);
+		insertInPage(new_Page, page->keys[MAX-1], page->childrenRRNs[MAX], MAX);
 		page->keys[MAX-1].assign("                ");
 		page->childrenRRNs[MAX] = -1;
 		page->keyCount --;
-		insertInPage(page, returnRecord, (*returnRRN), MAX, Idx);
+		insertInPage(page, returnRecord, (*returnRRN), MAX);
 	}
 	else // registro é inserido na pagina corrente
-		insertInPage(new_Page, returnRecord, (*returnRRN), MAX, Idx);
+		insertInPage(new_Page, returnRecord, (*returnRRN), MAX);
 
 	for(j = MIN + 2; j <= MAX; j++){
-		insertInPage(new_Page, page->keys[j-1], page->childrenRRNs[j], MAX, Idx);
+		insertInPage(new_Page, page->keys[j-1], page->childrenRRNs[j], MAX);
 		page->keys[j-1].assign("                ");
 		page->childrenRRNs[j] = -1;
 		page->keyCount --;
@@ -135,8 +137,8 @@ bool insertionProcess(string record, long int currentRRN, string& returnRecord, 
 	page->keys[MIN].assign("                ");
 	page->childrenRRNs[MIN+1] = -1;
 	page->keyCount = MIN;
-	writePage(page, false, MAX, Idx); 
-	writePage(new_Page, true, MAX, Idx);
+	writePage(page, false, MAX); 
+	writePage(new_Page, true, MAX);
 
   	return true;
 }
@@ -151,11 +153,11 @@ PAGE newPage(int MAX){ // Cria / Aloca nova pagina inicializando seus componente
 }
 
 // Retorna o RRN da pagina raiz
-long int insert(string record, long int rootRRN, int MAX, fstream& Idx){ 
+long int insert(string record, long int rootRRN, int MAX){ 
 	bool grownUp;
 	string returnRecord = " ";
 	long int returnRRN;
-	grownUp = insertionProcess(record, rootRRN, returnRecord, &returnRRN, MAX, Idx);
+	grownUp = insertionProcess(record, rootRRN, returnRecord, &returnRRN, MAX);
 	
 	if (grownUp){  // Arvore cresce na altura pela raiz
     	PAGE newRoot = newPage(MAX);
@@ -163,7 +165,7 @@ long int insert(string record, long int rootRRN, int MAX, fstream& Idx){
     	newRoot->keys[0].assign(returnRecord);
     	newRoot->childrenRRNs[0] = rootRRN;
     	newRoot->childrenRRNs[1] = returnRRN;
-    	writePage(newRoot, true, MAX, Idx);
+    	writePage(newRoot, true, MAX);
     	return newRoot->RRN;
 	}
 	return rootRRN;
@@ -195,7 +197,7 @@ string CreateKey(string line){
 long int createBTree(int MAX){
 	ifstream List("../res/lista.txt"); // Arquivo original com os dados dos Alunos
 	// Arquivo de Indices Primarios (Arvore B):
-	fstream Idx("../res/indicelista.bt", std::fstream::in | std::fstream::out);
+	//fstream Idx("../res/indicelista.bt", std::fstream::in | std::fstream::out);
 	long int rootRRN = -1, oldRRN;
 	string line = "to begin", record, rrnRecordStr;
 
@@ -207,7 +209,7 @@ long int createBTree(int MAX){
 
 		string btreeLine = record + "|" + rrnRecordStr; // registros a serem inseridos
 		oldRRN = rootRRN;
-		rootRRN = insert(btreeLine, rootRRN, MAX, Idx);
+		rootRRN = insert(btreeLine, rootRRN, MAX);
 
 		//if(oldRRN != rootRRN){
 			//Idx.seekp(0);

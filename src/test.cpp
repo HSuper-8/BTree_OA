@@ -47,11 +47,14 @@ PAGE getPage(long int rrn, int MAX, fstream& Idx){
   return page;
 }
 
-void writePage(PAGE page, bool newPage, int MAX, fstream& Idx){
+void writePage(PAGE page, bool newPage, int MAX){
   int k;
-    if(!newPage) Idx.seekp(page->RRN);
+  fstream Idx;
+    if(!newPage){
+      Idx.open("../res/indicelista.bt");
+      Idx.seekp(page->RRN);
+    }
     else{
-      Idx.close();
       Idx.open("../res/indicelista.bt", std::ios::app);
     }
 
@@ -71,11 +74,7 @@ void writePage(PAGE page, bool newPage, int MAX, fstream& Idx){
       }
     }
   Idx << "\n";
-  
-    if(newPage){
-      Idx.close();
-      Idx.open("../res/indicelista.bt");
-    }
+  Idx.close();
 }
 
 PAGE newPage(int MAX){
@@ -88,14 +87,14 @@ PAGE newPage(int MAX){
 }
 
 PAGE newPage(int MAX);
-void writePage(PAGE page, bool newPage, int MAX, fstream& Idx);
+void writePage(PAGE page, bool newPage, int MAX);
 PAGE newPage(int MAX);
 string createRRN(long int rrn);
 string CreateKey(string line);
 
 int main () {
   PAGE page;
-  fstream Idx("../res/indicelista.bt");
+  //fstream Idx("../res/indicelista.bt");
   page = newPage(3);
 
   string rrnRecordStr = createRRN(0);
@@ -107,15 +106,15 @@ int main () {
   //page->keys[1].assign"CAR62364|0      ";
   page->keyCount = 1;
   page->RRN = 20;
-  writePage(page, true, 3, Idx);
+  writePage(page, true, 3);
   //Idx.seekp(page->RRN);
   //for(int k = 0; k < 3; k++){
 //    cout << page->keys[k] << endl;
     //Idx << page->keys[k] << " ";
   //}
 
-  PAGE npage = getPage(20, 3, Idx);
-  writePage(npage, false, 3, Idx);
-  Idx.close();
+  page->keys[1].assign(page->keys[0]);
+  writePage(page, false, 3);
+  //Idx.close();
   return 0;
 }
