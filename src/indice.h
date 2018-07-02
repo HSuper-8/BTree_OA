@@ -17,7 +17,6 @@ struct BTPAGE {
 	vector<long int> childrenRRNs;
 };
 
-string CreateKey(string line);
 int position(PAGE page, string compare);
 void writePage(PAGE page, bool newPage, int MAX, fstream& Idx);
 void insertInPage(PAGE page, string record, long int son, int MAX, fstream& Idx);

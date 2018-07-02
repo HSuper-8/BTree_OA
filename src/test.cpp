@@ -7,18 +7,27 @@
 
 using namespace std;
 
-PAGE newPage(int MAX){
-  PAGE page;
-  page = new struct BTPAGE;
-  page->keyCount = 0;
-  for(int i = 0; i < MAX; i++) page->keys.push_back("");
-  for(int i = 0; i <= MAX; i++) page->childrenRRNs.push_back(-1);
-  return page;
+string CreateKey(string line){
+  string record;
+  record.push_back(toupper(line[0]));
+  record.push_back(toupper(line[1]));
+  record.push_back(toupper(line[2]));
+  return record + line.substr(41, 5);
 }
 
-PAGE getPage(long int rrn, fstream& Idx, int MAX){
+string createRRN(long int rrn){
+  string RRN;
+  RRN.assign(to_string(rrn));
+  if(RRN.size() < 7)
+    while(RRN.size() != 7) RRN.push_back(' ');
+  else 
+    return (to_string(rrn)).substr(0, 7);
+  return RRN;
+}
+
+PAGE getPage(long int rrn, int MAX, fstream& Idx){
   PAGE page = newPage(MAX);
-  Idx.seekp(rrn);
+  Idx.seekg(rrn);
   string records, RRNs;
   int k = 0, i = 0;
   getline(Idx, records);
@@ -38,53 +47,75 @@ PAGE getPage(long int rrn, fstream& Idx, int MAX){
   return page;
 }
 
-string createRRN(long int rrn){
-  string RRN;
-  RRN.assign(to_string(rrn));
-  if(RRN.size() < 7)
-    while(RRN.size() != 7) RRN.push_back(' ');
-  return RRN;
-}
-
-void writePage(PAGE page, fstream& Idx, bool newPage, int MAX){
+void writePage(PAGE page, bool newPage, int MAX, fstream& Idx){
   int k;
-  if(!newPage) Idx.seekg(page->RRN);
-  else{
-    Idx.close();
-    Idx.open("../res/indicelista.bt", std::ios::app);
-  }
+    if(!newPage) Idx.seekp(page->RRN);
+    else{
+      Idx.close();
+      Idx.open("../res/indicelista.bt", std::ios::app);
+    }
 
-  for(k = 0; k < page->keyCount; k++)
-    Idx << page->keys[k] << " ";
-  if(k+1 < MAX){
-    while(k+1 <= MAX) Idx << "         ";
-  }
+    for(k = 0; k < MAX; k++)
+      Idx << page->keys[k] << " ";
+
   int pos = Idx.tellp();
-  page->RRN = pos - (MAX * 17);
-  Idx << "\n";
+    page->RRN = pos - (MAX * 17);
+    Idx << "\n";
 
   for(k = 0; k < page->keyCount + 1; k++)
-    Idx << createRRN(page->childrenRRNs[k]) << " ";
-  if(k+1 < MAX+1){
-    while(k+1 <= MAX+1) Idx << "        ";
-  }
+      Idx << createRRN(page->childrenRRNs[k]) << " ";
+    if(k < MAX+1){
+      while(k+1 <= MAX+1){
+        Idx << createRRN(-1) << " ";
+        k++;
+      }
+    }
   Idx << "\n";
   
-  if(newPage){
-    Idx.close();
-    Idx.open("../res/indicelista.bt");
-  }
+    if(newPage){
+      Idx.close();
+      Idx.open("../res/indicelista.bt");
+    }
 }
 
-PAGE getPage(long int rrn, fstream& Idx, int MAX);
+PAGE newPage(int MAX){
+  PAGE page;
+  page = new struct BTPAGE;
+  page->keyCount = 0;
+  for(int i = 0; i < MAX; i++) page->keys.push_back("                ");
+  for(int i = 0; i <= MAX; i++) page->childrenRRNs.push_back(-1);
+  return page;
+}
+
 PAGE newPage(int MAX);
+void writePage(PAGE page, bool newPage, int MAX, fstream& Idx);
+PAGE newPage(int MAX);
+string createRRN(long int rrn);
+string CreateKey(string line);
 
 int main () {
   PAGE page;
   fstream Idx("../res/indicelista.bt");
-  page = getPage(0, Idx, 3);
-  writePage(page, Idx, true, 3);
-  cout << page->RRN << endl;
+  page = newPage(3);
+
+  string rrnRecordStr = createRRN(0);
+  string line = "Carlos Dias Takase                       62364  EM  A";
+  string record = CreateKey(line);
+  string btreeLine = record + "|" + rrnRecordStr;
+
+  page->keys[0].assign(btreeLine);
+  //page->keys[1].assign"CAR62364|0      ";
+  page->keyCount = 1;
+  page->RRN = 20;
+  writePage(page, true, 3, Idx);
+  //Idx.seekp(page->RRN);
+  //for(int k = 0; k < 3; k++){
+//    cout << page->keys[k] << endl;
+    //Idx << page->keys[k] << " ";
+  //}
+
+  PAGE npage = getPage(20, 3, Idx);
+  writePage(npage, false, 3, Idx);
   Idx.close();
   return 0;
 }
