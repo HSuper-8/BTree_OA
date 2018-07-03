@@ -2,7 +2,7 @@
 
 using namespace std;
 
-int position(PAGE page, string compare){ // posiçao em que novo registro devera ser inserido
+int position(PAGE page, string compare){ // posiçao em que novo registro deverá ou deveria ser inserido
 	int i = 0;
 	while(i < page->keyCount){
 		if(compare.compare(page->keys[i]) < 0) break;
@@ -19,18 +19,18 @@ PAGE getPage(long int rrn, int MAX){
   	Idx.seekg(rrn);
   	string records, RRNs;
   	int k = 0, i = 0;
-  	getline(Idx, records);
-  	while(k < records.size()){
+  	getline(Idx, records); // leitura da linha que contém as chaves
+  	while(k < records.size()){ // percorre linha lida capturando chaves
   		string str = "                ";
-  		if(str.compare(records.substr(k, 16)) == 0) break;
-	    page->keys[i++].assign( records.substr(k, 16) );
+  		if(str.compare(records.substr(k, 16)) == 0) break; // condição para nao pegar chaves não existentes
+	    page->keys[i++].assign( records.substr(k, 16) ); // captura da chave
     	page->keyCount ++;
     	k += 17;
   	}
-  	getline(Idx, RRNs);
+  	getline(Idx, RRNs); // leitura da linha que contém rrn das páginas filhas
   	k = 0;
   	i = 0;
-  	while(k < RRNs.size()){
+  	while(k < RRNs.size()){ // percorre linha lida capturando os rrn das páginas filhas
     	page->childrenRRNs[i++] = stoi( RRNs.substr(k, 7) );
     	k += 8;
   	}
@@ -39,7 +39,7 @@ PAGE getPage(long int rrn, int MAX){
   	return page;
 }
 
-// Insere novo registro na pagina de forma ordenada
+// Insere nova página na pagina de forma ordenada
 void insertInPage(PAGE page, string record, long int son, bool _write, int MAX){ 
 	int k;
 	for (k = page->keyCount; (k > 0) && (record.compare(page->keys[k-1]) < 0); k--){
@@ -94,15 +94,15 @@ bool insertionProcess(string record, long int currentRRN, string& returnRecord, 
     	return true;
   	}
 
-  	PAGE page = getPage(currentRRN, MAX);
+  	PAGE page = getPage(currentRRN, MAX); // cria página a partir das informações lidas no arquivo de indices
   	i = position(page, record);
 
-	if (binary_search(page->keys.begin(), page->keys.end(), record)){
+	if (binary_search(page->keys.begin(), page->keys.end(), record)){ // não inclui chaves já inseridas
 		printf(" Erro: REGISTRO ja esta presente\n");
     	return false;
   	}
 
-  	grownUp = insertionProcess(record, page->childrenRRNs[i], returnRecord, &(*returnRRN), MAX);
+  	grownUp = insertionProcess(record, page->childrenRRNs[i], returnRecord, &(*returnRRN), MAX); // percorre árvore pelas páginas filhas
 	if(!grownUp) return false;
 
  	if (page->keyCount < MAX){   //PAGINA tem espaco
@@ -136,8 +136,8 @@ bool insertionProcess(string record, long int currentRRN, string& returnRecord, 
 	page->keys[MIN].assign("                ");
 	page->childrenRRNs[MIN+1] = -1;
 	page->keyCount = MIN;
-	writePage(page, false, MAX);
-	writePage(new_Page, true, MAX);
+	writePage(page, false, MAX); // atualização do arquivo
+	writePage(new_Page, true, MAX); // atualização do arquivo
 	(*returnRRN) = new_Page->RRN;
 
   	return true;
@@ -152,7 +152,7 @@ PAGE newPage(int MAX){ // Cria / Aloca nova pagina inicializando seus componente
 	return page;
 }
 
-// Retorna o RRN da pagina raiz
+// Insere chave na árvore B e Retorna o RRN da pagina raiz
 long int insert(string record, long int rootRRN, int MAX){ 
 	bool grownUp;
 	string returnRecord = " ";
@@ -169,7 +169,7 @@ long int insert(string record, long int rootRRN, int MAX){
 
     	fstream Idx;
     	Idx.open("../res/indicelista.bt");
-    	Idx << to_string(newRoot->RRN);
+    	Idx << to_string(newRoot->RRN); // Atualiza RRN da página raiz
     	Idx.close();
     	return newRoot->RRN;
 	}
@@ -186,28 +186,14 @@ string createRRN(long int rrn){ // cria string de tamanho fixo 7 com o RRN
 	return RRN;
 }
 
-void insertRecord(int MAX){
-	string record, line;
-	cout << "Digite o registro que queira inserir no modelo correto" << endl;
-	cout << "Exemplo: Nome Sobrenome                           Matrícula(5 dígitos)  Curso(2 dígitos)  Turma(1 dígito)" << endl;
-	cout << "\n";
-	getline(cin, record);
-
-	fstream Idx("../res/indicelista.bt");
-	getline(Idx, line);
-	long int rootRRN = stoi(line);
-	Idx.close();	
-
-
-	ofstream List("../res/lista.txt", std::ios::app);
-	List << record << endl;
-	int pos = List.tellp();
-	long int rrn = pos - 54;
-	string rrnStr = createRRN(rrn);
-	string key = CreateKey(record);
-	string btreeLine = key + "|" + rrnStr;
-
-	insert(key, rootRRN, MAX);
+// Cria a chave primária a partir de uma linha lida
+string CreateKey(string line){
+	string record;
+	record.push_back(toupper(line[0]));
+	record.push_back(toupper(line[1]));
+	record.push_back(toupper(line[2]));
+	if(line[41] != ' ') return record + line.substr(41, 5);
+	if(line[41] == ' ') return record + line.substr(42, 5);
 }
 
 void printBTree(long int rrn, int MAX, int nivel){ 
@@ -220,16 +206,6 @@ void printBTree(long int rrn, int MAX, int nivel){
 	cout << "\n\n";
 	for(i = 0; i <= page->keyCount; i++)
 		printBTree(page->childrenRRNs[i], MAX, nivel+1);
-}
-
-// Cria a chave primária a partir de uma linha lida
-string CreateKey(string line){
-	string record;
-	record.push_back(toupper(line[0]));
-	record.push_back(toupper(line[1]));
-	record.push_back(toupper(line[2]));
-	if(line[41] != ' ') return record + line.substr(41, 5);
-	if(line[41] == ' ') return record + line.substr(42, 5);
 }
 
 long int createBTree(int MAX){
@@ -256,7 +232,41 @@ long int createBTree(int MAX){
 	return rootRRN;
 }
 
-bool find(PAGE page, string key, int *i){
+void insertRecord(int MAX){
+	string record, line;
+	long int rrn;
+	cout << "Digite o registro que queira inserir no modelo correto" << endl;
+	cout << "Exemplo: Nome Sobrenome                           Matrícula(5 dígitos)  Curso(2 dígitos)  Turma(1 dígito)" << endl;
+	cout << "\n";
+	getline(cin, record);
+
+	fstream Idx("../res/indicelista.bt");
+	getline(Idx, line);
+	long int rootRRN = stoi(line);
+	Idx.close();	
+
+	fstream list("../res/lista.txt"); // Encontrar rrn do registro que irá ser inserido
+	while(!list.eof()){
+		getline(list, line);
+		if(line.size() == 0){
+			rrn = list.tellg();
+			break;
+		}
+	}
+	list.close();
+
+	ofstream List("../res/lista.txt", std::ios::app); // Insere novo registro no fim da pagina do arquivo original
+	List << record << endl;
+	List.close();
+	
+	string rrnStr = createRRN(rrn);
+	string key = CreateKey(record);
+	string btreeLine = key + "|" + rrnStr;
+
+	insert(key, rootRRN, MAX); // insere nova chave na arvore b
+}
+
+bool find(PAGE page, string key, int *i){ // procura chave na página
 	while((*i) < page->keyCount){
 		if(key.compare( (page->keys[*i]).substr(0, 8) ) == 0) return true;
 		(*i)++;
@@ -282,7 +292,7 @@ bool search(long int RRN, string KEY, int *FOUND_RRN, int *FOUND_POS, int MAX, i
     }
 }
 
-void choice_key(int MAX){
+void choice_key(int MAX){ // Captura chave a ser buscada
 	cout << "\nDigite a chave cujo registro que deseja buscar: " << endl;
    	int FOUND_RRN = 0, FOUND_POS = 0, seeks = 0, rrnOriginFile;
    	string key, record, line;
@@ -307,9 +317,9 @@ void choice_key(int MAX){
    		cout << "\n Chave se encontra na pagina de RRN " << FOUND_RRN << " do arquivo de Indices" << endl;
    		cout << "na posição " << FOUND_POS << "." << endl;
    		cout << "\nQUANTIDADE DE SEEKS NECESSÁRIOS: " << seeks << endl;
-   		cout << "\n\n";
+   		cout << "\n";
    	}
-
+   	// Encontra registro correspondente no arquivo original
    	PAGE page = getPage(FOUND_RRN, MAX);
    	record.assign(page->keys[FOUND_POS]);
    	rrnOriginFile = stoi( record.substr(9, 7) );

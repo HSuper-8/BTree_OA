@@ -13,9 +13,9 @@ typedef struct BTPAGE* PAGE;
 
 struct BTPAGE {
 	int RRN;
-	short keyCount;
-	vector<string> keys;
-	vector<long int> childrenRRNs;
+	short keyCount; // contador de chaves existentes na página
+	vector<string> keys; // vetor que contém as chaves
+	vector<long int> childrenRRNs; // vetor que contém os rrn das páginas filhas
 };
 
 void Menu(int MAX);
@@ -34,7 +34,7 @@ void printBTree(long int rrn, int MAX, int nivel);
 long int createBTree(int MAX);
 void insertRecord(int MAX);
 
-// Search record
+// Funções para busca
 bool search(long int RRN, string KEY, int *FOUND_RRN, int *FOUND_POS, int MAX, int *seeks);
 bool find(PAGE page, string key, int *i);
 void choice_key(int MAX);
