@@ -245,18 +245,10 @@ void insertRecord(int MAX){
 	long int rootRRN = stoi(line);
 	Idx.close();	
 
-	fstream list("../res/lista.txt"); // Encontrar rrn do registro que irá ser inserido
-	while(!list.eof()){
-		getline(list, line);
-		if(line.size() == 0){
-			rrn = list.tellg();
-			break;
-		}
-	}
-	list.close();
-
 	ofstream List("../res/lista.txt", std::ios::app); // Insere novo registro no fim da pagina do arquivo original
 	List << record << endl;
+	int pos = List.tellp();
+	rrn = pos - 54;
 	List.close();
 	
 	string rrnStr = createRRN(rrn);
