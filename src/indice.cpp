@@ -318,17 +318,19 @@ void choice_key(int MAX){ // Captura chave a ser buscada
    		cout << "na posição " << FOUND_POS << "." << endl;
    		cout << "\nQUANTIDADE DE SEEKS NECESSÁRIOS: " << seeks << endl;
    		cout << "\n";
-   	}
-   	// Encontra registro correspondente no arquivo original
-   	PAGE page = getPage(FOUND_RRN, MAX);
-   	record.assign(page->keys[FOUND_POS]);
-   	rrnOriginFile = stoi( record.substr(9, 7) );
-   	fstream List("../res/lista.txt");
-   	List.seekg(rrnOriginFile);
-   	getline(List, line);
+	   	// Encontra registro correspondente no arquivo original
+	   	PAGE page = getPage(FOUND_RRN, MAX);
+	   	record.assign(page->keys[FOUND_POS]);
+	   	rrnOriginFile = stoi( record.substr(9, 7) );
+	   	fstream List("../res/lista.txt");
+	   	List.seekg(rrnOriginFile);
+	   	getline(List, line);
 
-   	cout << "Registro encontrado:" << endl;
-   	cout << line << endl;
+	   	cout << "Registro encontrado:" << endl;
+	   	cout << line << endl;
+   	}
+   	else
+   		cout << "Registro não existe" << endl;
 }
 
 void Menu(int MAX){
