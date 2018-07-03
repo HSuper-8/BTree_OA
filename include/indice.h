@@ -36,5 +36,5 @@ void insertRecord(int MAX);
 
 // Funções para busca
 bool search(long int RRN, string KEY, int *FOUND_RRN, int *FOUND_POS, int MAX, int *seeks);
-bool find(PAGE page, string key, int *i);
+bool find(PAGE page, string key);
 void choice_key(int MAX);

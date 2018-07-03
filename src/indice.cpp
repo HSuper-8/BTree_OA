@@ -266,10 +266,18 @@ void insertRecord(int MAX){
 	insert(key, rootRRN, MAX); // insere nova chave na arvore b
 }
 
-bool find(PAGE page, string key, int *i){ // procura chave na página
-	while((*i) < page->keyCount){
-		if(key.compare( (page->keys[*i]).substr(0, 8) ) == 0) return true;
-		(*i)++;
+bool find(PAGE page, string key){ // procura chave na página
+	bool yes;
+	int i = 0;
+	while(i < page->keyCount){
+		if(key.compare( (page->keys[i]).substr(0, 8) ) == 0){
+			string line = (page->keys[i]).substr(0, 8);
+			cout << line << endl;
+			yes = true;
+			return true;
+			break;
+		}
+		i++;
 	}
 	return false;
 }
@@ -277,11 +285,13 @@ bool find(PAGE page, string key, int *i){ // procura chave na página
 bool search(long int RRN, string KEY, int *FOUND_RRN, int *FOUND_POS, int MAX, int *seeks){
 	int i = 0;
 	bool found;
-   	if(RRN == -1) return false; // parar condição de recursão (fim da arvore)
+   	if(RRN == -1)
+   		return false; // parar condição de recursão (fim da arvore)
    	else{
      	PAGE page = getPage(RRN, MAX);
      	(*seeks) ++;
-      	found = find(page, KEY, &i);
+     	i = position(page, KEY);
+      	found = find(page, KEY);
       	if(found){
 			(*FOUND_RRN) = RRN; // o RRN corrente contém a chave buscada
          	(*FOUND_POS) = i;      		
@@ -314,7 +324,7 @@ void choice_key(int MAX){ // Captura chave a ser buscada
 
    	if(found){
    		cout << "Chave encontrada!" << endl;
-   		cout << "\n Chave se encontra na pagina de RRN " << FOUND_RRN << " do arquivo de Indices" << endl;
+   		cout << "\nChave se encontra na pagina de RRN " << FOUND_RRN << " do arquivo de Indices" << endl;
    		cout << "na posição " << FOUND_POS << "." << endl;
    		cout << "\nQUANTIDADE DE SEEKS NECESSÁRIOS: " << seeks << endl;
    		cout << "\n";
