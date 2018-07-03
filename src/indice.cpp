@@ -263,7 +263,7 @@ void insertRecord(int MAX){
 	string key = CreateKey(record);
 	string btreeLine = key + "|" + rrnStr;
 
-	insert(key, rootRRN, MAX); // insere nova chave na arvore b
+	insert(btreeLine, rootRRN, MAX); // insere nova chave na arvore b
 }
 
 bool find(PAGE page, string key){ // procura chave na página
