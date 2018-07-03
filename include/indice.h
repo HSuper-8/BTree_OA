@@ -5,6 +5,7 @@
 #include <fstream>
 #include <iostream>
 #include <ctype.h>
+#include <iomanip>
 
 using namespace std;
 
@@ -17,6 +18,7 @@ struct BTPAGE {
 	vector<long int> childrenRRNs;
 };
 
+void Menu(int MAX);
 string CreateKey(string line);
 int position(PAGE page, string compare);
 void writePage(PAGE page, bool newPage, int MAX);
@@ -25,12 +27,12 @@ PAGE getPage(long int rrn, int MAX);
 string createRRN(long int rrn);
 PAGE newPage(int MAX);
 void changeRoot(PAGE newRoot);
-
 bool insertionProcess(string record, long int currentRRN, string& returnRecord, long int *returnRRN, int MAX);
 
 long int insert(string record, long int rootRRN, int MAX);
-void printBTree(PAGE p, int level);
+void printBTree(long int rrn, int MAX, int nivel);
 long int createBTree(int MAX);
+void insertRecord(int MAX);
 
 // Search record
 bool search(long int RRN, string KEY, int *FOUND_RRN, int *FOUND_POS, int MAX, int *seeks);

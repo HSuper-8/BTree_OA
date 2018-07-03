@@ -17,7 +17,7 @@ int main(int argc, char *argv[]){
 
 	createBTree(MAX);
 
-	choice_key(MAX);
+	Menu(MAX);
 
 	return 0;
 }

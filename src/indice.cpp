@@ -186,8 +186,40 @@ string createRRN(long int rrn){ // cria string de tamanho fixo 7 com o RRN
 	return RRN;
 }
 
-void printBTree(PAGE page, int level){ 
+void insertRecord(int MAX){
+	string record, line;
+	cout << "Digite o registro que queira inserir no modelo correto" << endl;
+	cout << "Exemplo: Nome Sobrenome                           Matrícula(5 dígitos)  Curso(2 dígitos)  Turma(1 dígito)" << endl;
+	cout << "\n";
+	getline(cin, record);
 
+	fstream Idx("../res/indicelista.bt");
+	getline(Idx, line);
+	long int rootRRN = stoi(line);
+	Idx.close();	
+
+
+	ofstream List("../res/lista.txt", std::ios::app);
+	List << record << endl;
+	int pos = List.tellp();
+	long int rrn = pos - 54;
+	string rrnStr = createRRN(rrn);
+	string key = CreateKey(record);
+	string btreeLine = key + "|" + rrnStr;
+
+	insert(key, rootRRN, MAX);
+}
+
+void printBTree(long int rrn, int MAX, int nivel){ 
+	int i;
+	PAGE page = getPage(rrn, MAX);
+	if(rrn == -1) return;
+	cout << "Nível: " << nivel << endl;
+	for(i = 0; i < page->keyCount; i++)
+		cout << page->keys[i] << " ";
+	cout << "\n\n";
+	for(i = 0; i <= page->keyCount; i++)
+		printBTree(page->childrenRRNs[i], MAX, nivel+1);
 }
 
 // Cria a chave primária a partir de uma linha lida
@@ -217,7 +249,6 @@ long int createBTree(int MAX){
 		rootRRN = insert(btreeLine, rootRRN, MAX);
 
 		rrnRecord = List.tellg();
-		line.clear();
 		getline(List, line);
 	}
 
@@ -259,6 +290,11 @@ void choice_key(int MAX){
    	bool found;
    	getline(cin, key);
 
+   	while(key.size() != 8){
+   		cout << "Digite uma chave válida. Exemplo: NOR82344" << endl;
+   		getline(cin, key);
+   	}
+
    	fstream Idx("../res/indicelista.bt");
    	getline(Idx, line);
    	rrnROOT = stoi(line); // encontra RRN da raiz da arvore B
@@ -283,4 +319,56 @@ void choice_key(int MAX){
 
    	cout << "Registro encontrado:" << endl;
    	cout << line << endl;
+}
+
+void Menu(int MAX){
+	string opcao, line;
+   	int op;
+   	long int rrnRoot;
+   	fstream Idx;
+   	while(true){
+    	cout <<endl<<endl;
+      	cout <<"\t\t**************************************************"<<endl;
+      	cout <<"\t\t"<<"*"<<setw(17)<<""<<setw(13)<<"MENU INDICES"<<setw(18)<<""<<"*"<<endl;
+      	cout <<"\t\t**************************************************"<<endl;
+      	cout <<"\t\t"<<"*"<<"\t"<<"OPÇÃO:"<<"\t\t"<<"DESCRIÇÃO:"<<"\t\t"<<" *"<<endl;
+      	cout <<"\t\t"<<"*""------------------------------------------------"<<"*"<<endl;
+      	cout <<"\t\t"<<"*"<<"\t"<<"[1]"<<"\t"<<"Mostrar Indices"<<"\t\t\t"<<" *"<<endl;
+      	cout <<"\t\t"<<"*"<<"\t"<<"[2]"<<"\t"<<"Incluir REGRISTRO"<<"\t\t"<<" *"<<endl;
+      	cout <<"\t\t"<<"*"<<"\t"<<"[3]"<<"\t"<<"Buscar REGISTRO"<<"\t\t\t"<<" *"<<endl;
+      	cout <<"\t\t"<<"*"<<"\t"<<"[0]"<<"\t"<<"SAIR"<<"\t\t\t\t"<<" *"<<endl;
+      	cout <<"\t\t**************************************************"<<endl;
+      	cout <<"\t\t"<<setw(10)<<"Digite sua opção---> ";
+      	getline(cin, opcao);
+      	op = stoi(opcao);
+    	switch(op){
+      		case 1:
+         		Idx.open("../res/indicelista.bt");
+				getline(Idx, line);
+				rrnRoot = stoi(line);
+				Idx.close();
+
+         		printBTree(rrnRoot, MAX, 0);
+         		break;
+      		case 2:
+         		insertRecord(MAX);
+
+         		Idx.open("../res/indicelista.bt");
+				getline(Idx, line);
+				rrnRoot = stoi(line);
+				Idx.close();
+
+         		printBTree(rrnRoot, MAX, 0);
+         		break;
+      		case 3:
+         		choice_key(MAX);
+         		break;
+      		case 0: 
+         		cout <<"\n\tVocê saiu do programa!\n";
+         		exit(0);
+	         	break;
+    		default:
+         		cout <<"\n\tDigite uma opção válida!\n";
+    	}
+  	}
 }
